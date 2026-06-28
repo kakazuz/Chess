@@ -3,6 +3,8 @@ package chess;
 import java.util.Collection;
 import java.util.List;
 
+
+
 /**
  * Represents a single chess piece
  * <p>
@@ -13,11 +15,40 @@ public class ChessPiece {
 
     private final ChessGame.TeamColor pieceColor;
     private final PieceType type;
+    public final PieceMovesCalculators.PieceMovesCalculator calculator;
 
     public ChessPiece(ChessGame.TeamColor pieceColor, ChessPiece.PieceType type) {
         this.pieceColor = pieceColor;
         this.type = type;
+        this.calculator = createCalculator(type);
     }
+
+    private PieceMovesCalculators.PieceMovesCalculator createCalculator(PieceType type) {
+        if (type == PieceType.BISHOP) {
+            return new PieceMovesCalculators.BishopMovesCalc();
+        }
+        if (type == PieceType.KING) {
+            return new PieceMovesCalculators.KingMovesCalc();
+        }
+        if (type == PieceType.QUEEN) {
+            return new PieceMovesCalculators.QueenMovesCalc();
+        }
+        if (type == PieceType.ROOK) {
+            return new PieceMovesCalculators.RookMovesCalc();
+        }
+        if (type == PieceType.PAWN) {
+            return new PieceMovesCalculators.PawnMovesCalc();
+        }
+        if (type == PieceType.KNIGHT) {
+            return new PieceMovesCalculators.KnightMovesCalc();
+        }
+        else {
+            return null;
+        }
+    }
+
+
+
 
     /**
      * The various different chess piece options
@@ -53,19 +84,6 @@ public class ChessPiece {
      * @return Collection of valid moves
      */
     public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition myPosition) {
-        ChessPiece piece = board.getPiece(myPosition);
-        if (piece.getPieceType() == PieceType.BISHOP) {
-            return List.of(new ChessMove(new ChessPosition(5,4), new ChessPosition(1,8), null));
-        }
-        return List.of();
+        return calculator.pieceMoves(board, myPosition);
     }
-}
-
-private class pieceMovesCalc(ChessBoard board, ChessPiece piece, ChessPosition myPosition) {
-
-
-    public bishopMoves(ChessBoard board, ChessPiece piece, ChessPosition myPosition) {
-            return 0;
-    }
-
 }
