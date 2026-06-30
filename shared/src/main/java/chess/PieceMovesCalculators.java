@@ -267,10 +267,31 @@ public class PieceMovesCalculators {
     public static class KnightMovesCalc implements  PieceMovesCalculator {
         public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition myPosition) {
             ChessPiece piece = board.getPiece(myPosition);
-            if (piece.getPieceType() == ChessPiece.PieceType.BISHOP) {
-                return List.of(new ChessMove(new ChessPosition(5,4), new ChessPosition(1,8), null));
+            ChessGame.TeamColor peiceType = piece.getTeamColor();
+            List<ChessMove> moveList = new ArrayList<>();
+
+            int[][] moves = { {2,1}, {2,-1}, {-2,1}, {-2,-1}, {1,2}, {1,-2}, {-1,2}, {-1,-2} };
+
+            for (int i = 0; i < 8; i++) {
+                int newRow = myPosition.getRow() + moves[i][0];
+                int newCol = myPosition.getColumn() + moves[i][1];
+
+                if (newRow < 1 || newRow > 8 || newCol < 1 || newCol > 8 ) {
+                    continue;
+                }
+                ChessPiece newPiece = board.getPiece(new ChessPosition(newRow,newCol));
+                if (newPiece == null ) {
+                    moveList.add(new ChessMove(myPosition, new ChessPosition(newRow,newCol), null));
+                }
+                else {
+                    if (piece.getTeamColor() != newPiece.getTeamColor()) {
+                        moveList.add(new ChessMove(myPosition, new ChessPosition(newRow, newCol), null));
+                    }
+                }
+
+
             }
-            return List.of();
+            return moveList;
         }
 
     }
