@@ -66,7 +66,7 @@ public class ChessGame{
             }
             cloneBoard.addPiece(move.getEndPosition(), piece);
             cloneBoard.addPiece(startPosition, null);
-            if(!checkClone(piece.getTeamColor(), cloneBoard)) {
+            if(!checkMoveClone(piece.getTeamColor(), cloneBoard)) {
                 legalMoves.add(move);
             }
         }
@@ -124,7 +124,7 @@ public class ChessGame{
             for (int col = 1; col < 9; col++) {
                 ChessPosition pos = new ChessPosition(row, col);
                 ChessPiece piece = board.getPiece(pos);
-                if(checkHelper(piece, opponent, pos, kingPos, board)) {
+                if(inCheckHelper(piece, opponent, pos, kingPos, board)) {
                     return true;
                 }
             }
@@ -184,7 +184,7 @@ public class ChessGame{
         return null;
     }
 
-    private boolean checkClone(TeamColor teamColor, ChessBoard clone) {
+    private boolean checkMoveClone(TeamColor teamColor, ChessBoard clone) {
         ChessPosition kingPos = findKing(teamColor,clone);
         TeamColor opponent;
         if(teamColor == TeamColor.WHITE) {
@@ -196,7 +196,7 @@ public class ChessGame{
             for (int col = 1; col < 9; col++) {
                 ChessPosition pos = new ChessPosition(row, col);
                 ChessPiece piece = clone.getPiece(pos);
-                if(checkHelper(piece, opponent, pos, kingPos, clone)) {
+                if(inCheckHelper(piece, opponent, pos, kingPos, clone)) {
                     return true;
                 }
             }
@@ -204,7 +204,7 @@ public class ChessGame{
         return false;
     }
 
-    private boolean checkHelper(ChessPiece piece, TeamColor opponent, ChessPosition pos, ChessPosition kingPos, ChessBoard board) {
+    private boolean inCheckHelper(ChessPiece piece, TeamColor opponent, ChessPosition pos, ChessPosition kingPos, ChessBoard board) {
         if(piece != null && piece.getTeamColor() == opponent) {
             Collection<ChessMove> moveList = piece.pieceMoves(board, pos);
             for(ChessMove move : moveList) {
