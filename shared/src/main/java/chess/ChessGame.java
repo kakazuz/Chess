@@ -54,11 +54,9 @@ public class ChessGame{
         if(board.getPiece(startPosition) == null) {
             return null;
         }
-
         ChessPiece piece = board.getPiece(startPosition);
         Collection<ChessMove> moveList = piece.pieceMoves(board,startPosition);
         Collection<ChessMove> legalMoves = new ArrayList<>();
-
         for(ChessMove move: moveList) {
             ChessBoard cloneBoard;
             try {
@@ -71,8 +69,6 @@ public class ChessGame{
             if(!checkClone(piece.getTeamColor(), cloneBoard)) {
                 legalMoves.add(move);
             }
-
-
         }
         return legalMoves;
 
@@ -87,7 +83,6 @@ public class ChessGame{
     public void makeMove(ChessMove move) throws InvalidMoveException {
         ChessPosition startPos = move.getStartPosition();
         ChessPiece piece = board.getPiece(startPos);
-
         if(piece == null) {
             throw new InvalidMoveException("No piece to move");
         }
@@ -98,10 +93,8 @@ public class ChessGame{
         if(moveList == null || !moveList.contains(move)) {
             throw new InvalidMoveException("Invalid move");
         }
-
         board.addPiece(move.getEndPosition(), piece);
         board.addPiece(startPos, null);
-
         if(move.getPromotionPiece() != null) {
             ChessPiece promotion = new ChessPiece(piece.getTeamColor(), move.getPromotionPiece());
             board.addPiece(move.getEndPosition(), promotion);
@@ -111,7 +104,6 @@ public class ChessGame{
         } else {
             setTeamTurn(TeamColor.WHITE);
         }
-
     }
 
     /**
@@ -123,13 +115,11 @@ public class ChessGame{
     public boolean isInCheck(TeamColor teamColor) {
         ChessPosition kingPos = findKing(teamColor, board);
         TeamColor opponent;
-
         if(teamColor == TeamColor.WHITE) {
             opponent = TeamColor.BLACK;
         } else {
             opponent = TeamColor.WHITE;
         }
-
         for(int row = 1; row < 9; row++) {
             for (int col = 1; col < 9; col++) {
                 ChessPosition pos = new ChessPosition(row, col);
@@ -197,13 +187,11 @@ public class ChessGame{
     private boolean checkClone(TeamColor teamColor, ChessBoard clone) {
         ChessPosition kingPos = findKing(teamColor,clone);
         TeamColor opponent;
-
         if(teamColor == TeamColor.WHITE) {
             opponent = TeamColor.BLACK;
         } else {
             opponent = TeamColor.WHITE;
         }
-
         for(int row = 1; row < 9; row++) {
             for (int col = 1; col < 9; col++) {
                 ChessPosition pos = new ChessPosition(row, col);
