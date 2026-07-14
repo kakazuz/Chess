@@ -10,7 +10,6 @@ public class MemoryUserDAO implements UserDAO {
     @Override
     public void clear() throws DataAccessException {
         users.clear();
-
     }
 
     @Override
@@ -19,7 +18,6 @@ public class MemoryUserDAO implements UserDAO {
             throw new DataAccessException("Already taken username");
         }
         users.put(user.username(), user);
-
     }
 
     @Override
