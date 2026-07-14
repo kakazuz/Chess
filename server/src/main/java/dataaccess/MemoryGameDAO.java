@@ -43,6 +43,7 @@ public class MemoryGameDAO implements GameDAO{
         if (!games.containsKey(game.gameID())) {
             throw new DataAccessException("Bad request");
         }
+        games.remove(game.gameID());
         games.put(game.gameID(), game);
     }
 }
