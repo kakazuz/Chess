@@ -3,6 +3,10 @@ package service;
 import dataaccess.GameDAO;
 import dataaccess.AuthDAO;
 import dataaccess.DataAccessException;
+import model.GameData;
+
+import java.util.ArrayList;
+import java.util.Collection;
 
 public class GameService {
     private final GameDAO gameDAO;
@@ -22,6 +26,23 @@ public class GameService {
         int gameID = gameDAO.createGame(request.gameName());
 
         return new CreateGameResult(gameID);
+    }
+
+    public Collection<GameDataForList>  listGames(String authToken) throws DataAccessException {
+        authDAO.getAuth(authToken);
+        Collection<GameData> allGames = gameDAO.listGames();
+        Collection<GameDataForList> result = new ArrayList<>();
+
+        for (GameData game : allGames) {
+            result.add(new GameDataForList(
+                    game.gameID(),
+                    game.whiteUsername() != null ? game.whiteUsername() : "",
+                    game.blackUsername() != null ? game.blackUsername() : "",
+                    game.gameName()
+            ));
+        }
+
+        return result;
     }
 
 }
