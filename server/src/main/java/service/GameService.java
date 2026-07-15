@@ -3,6 +3,7 @@ package service;
 import dataaccess.GameDAO;
 import dataaccess.AuthDAO;
 import dataaccess.DataAccessException;
+import model.AuthData;
 import model.GameData;
 
 import java.util.ArrayList;
@@ -43,6 +44,35 @@ public class GameService {
         }
 
         return result;
+    }
+
+    public void joinGame(String authToken, JoinGameRequest request) throws DataAccessException{
+        if (request.playerColor() == null || request.playerColor().isBlank() ||
+                request.gameID() == null) {
+            throw new DataAccessException("bad request");
+        }
+        authDAO.getAuth(authToken);
+        AuthData auth = authDAO.getAuth(authToken);
+        String username = auth.username();
+
+        GameData game = gameDAO.getGame(request.gameID());
+        GameData updatedGame;
+
+        if (request.playerColor().equals("WHITE")) {
+            if (game.whiteUsername() != null && !game.whiteUsername().isBlank()) {
+                throw new DataAccessException("already taken");
+            }
+            updatedGame = new GameData(game.gameID(), username, game.blackUsername(), game.gameName());
+        }
+        else if (request.playerColor().equals("BLACK")) {
+            if (game.blackUsername() != null && !game.blackUsername().isBlank()) {
+                throw new DataAccessException("already taken");
+            }
+            updatedGame = new GameData(game.gameID(), game.whiteUsername(), username, game.gameName());
+        } else {
+            throw new DataAccessException("bad request");
+        }
+        gameDAO.updateGame(updatedGame);
     }
 
 }

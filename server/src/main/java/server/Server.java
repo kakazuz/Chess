@@ -25,12 +25,14 @@ public class Server {
         LogoutHandler logoutHandler = new LogoutHandler(userService);
         CreateGameHandler createGameHandler = new CreateGameHandler(gameService);
         ListGamesHandler listGamesHandler = new ListGamesHandler(gameService);
+        JoinGameHandler joinGameHandler = new JoinGameHandler(gameService);
 
         javalin.post("/user", registerHandler::handle);
         javalin.post("/session", loginHandler::handle);
         javalin.delete("/session", logoutHandler::handle);
         javalin.post("/game", createGameHandler::handle);
         javalin.get("/game", listGamesHandler::handle);
+        javalin.put("/game", joinGameHandler::handle);
 
 
     }

@@ -1,29 +1,28 @@
 package server;
 import com.google.gson.Gson;
 import io.javalin.http.Context;
-import service.CreateGameRequest;
-import service.CreateGameResult;
+import service.JoinGameRequest;
 import service.GameService;
 import dataaccess.DataAccessException;
 
-public class CreateGameHandler {
+public class JoinGameHandler {
 
     private final GameService gameService;
     private final Gson gson = new Gson();
 
-    public CreateGameHandler(GameService gameService) {
+    public JoinGameHandler(GameService gameService) {
         this.gameService = gameService;
     }
     public void handle(Context ctx) {
         try {
             String authToken = ctx.header("authorization");
-            CreateGameRequest request = gson.fromJson(ctx.body(), CreateGameRequest.class);
+            JoinGameRequest request = gson.fromJson(ctx.body(), JoinGameRequest.class);
             if(authToken == null || authToken.isBlank()) {
                 ctx.status(401).result(gson.toJson(new ErrorMessage("unauthorized")));
                 return;
             }
-            CreateGameResult result = gameService.createGame(authToken, request);
-            ctx.status(200).result(gson.toJson(result));
+            gameService.joinGame(authToken, request);
+            ctx.status(200).result("{}");
 
         } catch (DataAccessException e) {
             int status;
@@ -31,12 +30,12 @@ public class CreateGameHandler {
                 status = 400;
             } else if (e.getMessage().equals("unauthorized")) {
                 status = 401;
+            } else if (e.getMessage().equals("already taken")) {
+                status = 403;
             } else {
                 status = 500;
             }
             ctx.status(status).result(gson.toJson(new ErrorMessage("Error: " + e.getMessage())));
-        } catch (Exception e) {
-            ctx.status(500).result(gson.toJson(new ErrorMessage("Error: " + e.getMessage())));
         }
     }
     private static class ErrorMessage {
