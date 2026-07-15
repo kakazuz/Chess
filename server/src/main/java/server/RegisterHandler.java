@@ -3,7 +3,7 @@ package server;
 import com.google.gson.Gson;
 import io.javalin.http.Context;
 import service.RegisterRequest;
-import service.RegisterResult;
+import service.RegisterLoginResult;
 import service.UserService;
 import dataaccess.DataAccessException;
 
@@ -19,7 +19,7 @@ public class RegisterHandler {
     public void handle(Context ctx) {
         try {
             RegisterRequest request = gson.fromJson(ctx.body(), RegisterRequest.class);
-            RegisterResult result = userService.register(request);
+            RegisterLoginResult result = userService.register(request);
             ctx.status(200).result(gson.toJson(result));
         } catch (DataAccessException e) {
             int status;
