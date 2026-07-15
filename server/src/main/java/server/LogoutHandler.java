@@ -30,8 +30,6 @@ public class LogoutHandler {
                 status = 500;
             }
             ctx.status(status).result(gson.toJson(new ErrorMessage("Error: " + e.getMessage())));
-        } catch (Exception e) {
-            ctx.status(500).result(gson.toJson(new ErrorMessage("Error: " + e.getMessage())));
         }
     }
     private static class ErrorMessage {

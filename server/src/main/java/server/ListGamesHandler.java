@@ -5,6 +5,8 @@ import model.GameData;
 import service.GameDataForList;
 import service.GameService;
 import dataaccess.DataAccessException;
+import service.ListGameResults;
+
 import java.util.Collection;
 
 public class ListGamesHandler {
@@ -22,7 +24,8 @@ public class ListGamesHandler {
                 ctx.status(401).result(gson.toJson(new ErrorMessage("unauthorized")));
                 return;
             }
-            Collection<GameDataForList> result = gameService.listGames(authToken);
+            Collection<GameDataForList> games = gameService.listGames(authToken);
+            ListGameResults result = new ListGameResults(games);
             ctx.status(200).result(gson.toJson(result));
 
         } catch (DataAccessException e) {

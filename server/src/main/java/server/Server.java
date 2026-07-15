@@ -2,6 +2,7 @@ package server;
 
 import dataaccess.*;
 import io.javalin.*;
+import service.ClearService;
 import service.UserService;
 import service.GameService;
 
@@ -19,6 +20,7 @@ public class Server {
 
         UserService userService = new UserService(userDAO, authDAO);
         GameService gameService = new GameService(gameDAO, authDAO);
+        ClearService clearService = new ClearService(userDAO, authDAO, gameDAO);
 
         RegisterHandler registerHandler = new RegisterHandler(userService);
         LoginHandler loginHandler = new LoginHandler(userService);
@@ -26,6 +28,7 @@ public class Server {
         CreateGameHandler createGameHandler = new CreateGameHandler(gameService);
         ListGamesHandler listGamesHandler = new ListGamesHandler(gameService);
         JoinGameHandler joinGameHandler = new JoinGameHandler(gameService);
+        ClearHandler clearHandler = new ClearHandler(clearService);
 
         javalin.post("/user", registerHandler::handle);
         javalin.post("/session", loginHandler::handle);
@@ -33,7 +36,7 @@ public class Server {
         javalin.post("/game", createGameHandler::handle);
         javalin.get("/game", listGamesHandler::handle);
         javalin.put("/game", joinGameHandler::handle);
-
+        javalin.delete("/db", clearHandler::handle);
 
     }
 

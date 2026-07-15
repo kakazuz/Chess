@@ -37,8 +37,8 @@ public class GameService {
         for (GameData game : allGames) {
             result.add(new GameDataForList(
                     game.gameID(),
-                    game.whiteUsername() != null ? game.whiteUsername() : "",
-                    game.blackUsername() != null ? game.blackUsername() : "",
+                    game.whiteUsername(),
+                    game.blackUsername(),
                     game.gameName()
             ));
         }

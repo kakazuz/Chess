@@ -27,7 +27,7 @@ public class MemoryAuthDAO implements AuthDAO{
     @Override
     public void deleteAuth(String authToken) throws DataAccessException {
         if (!auths.containsKey(authToken)) {
-            throw new DataAccessException("Unauthorized");
+            throw new DataAccessException("unauthorized");
         }
         auths.remove(authToken);
     }
