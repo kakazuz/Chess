@@ -16,33 +16,25 @@ public class RegisterHandler {
     public RegisterHandler(UserService userService) {
         this.userService = userService;
     }
-
-    public Object handle(Context ctx) {
+    public void handle(Context ctx) {
         try {
-            // Convert JSON body to RegisterRequest
             RegisterRequest request = gson.fromJson(ctx.body(), RegisterRequest.class);
-
-            // Call the service
             RegisterResult result = userService.register(request);
-
-            // Send success response
-            ctx.status(200).json(gson.toJson(result));
-
+            ctx.status(200).result(gson.toJson(result));
         } catch (DataAccessException e) {
+            int status;
             if (e.getMessage().equals("bad request")) {
-                ctx.status(400);
+                status = 400;
             } else if (e.getMessage().equals("already taken")) {
-                ctx.status(403);
+                status = 403;
             } else {
-                ctx.status(500);
+                status = 500;
             }
-            ctx.json(new ErrorMessage("Error: " + e.getMessage()));
+            ctx.status(status).result(gson.toJson(new ErrorMessage("Error: " + e.getMessage())));
         } catch (Exception e) {
-            ctx.status(500);
-            ctx.json(new ErrorMessage("Error: " + e.getMessage()));
+            ctx.status(500).result(gson.toJson(new ErrorMessage("Error: " + e.getMessage())));
         }
     }
-
     private static class ErrorMessage {
         String message;
         ErrorMessage(String message) {
