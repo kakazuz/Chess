@@ -38,8 +38,9 @@ public class SQLUserDAO implements UserDAO {
         var statement = "INSERT INTO user (username, password, email) VALUES (?, ?, ?)";
         try (var conn = DatabaseManager.getConnection()) {
             try (var preparedStatement = conn.prepareStatement(statement)) {
+                String hashedPassword = org.mindrot.jbcrypt.BCrypt.hashpw(user.password(), org.mindrot.jbcrypt.BCrypt.gensalt());
                 preparedStatement.setString(1, user.username());
-                preparedStatement.setString(2, user.password());
+                preparedStatement.setString(2, hashedPassword);
                 preparedStatement.setString(3, user.email());
                 preparedStatement.executeUpdate();
             }

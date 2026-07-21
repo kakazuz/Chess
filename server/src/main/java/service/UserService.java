@@ -53,7 +53,7 @@ public class UserService {
         } catch (DataAccessException e) {
             throw new DataAccessException("unauthorized");
         }
-        if (!user.password().equals(request.password())) {
+        if (!org.mindrot.jbcrypt.BCrypt.checkpw(request.password(), user.password())) {
             throw new DataAccessException("unauthorized");
         }
         String authToken = java.util.UUID.randomUUID().toString();
