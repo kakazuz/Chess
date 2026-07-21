@@ -19,7 +19,7 @@ public class MemoryGameDAO implements GameDAO{
         int gameID = nextGameID;
         nextGameID++;
 
-        GameData newGame = new GameData(gameID, null, null, gameName);
+        GameData newGame = new GameData(gameID, null, null, gameName, new ChessGame());
         games.put(gameID, newGame);
 
         return gameID;

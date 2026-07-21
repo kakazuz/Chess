@@ -62,13 +62,13 @@ public class GameService {
             if (game.whiteUsername() != null && !game.whiteUsername().isBlank()) {
                 throw new DataAccessException("already taken");
             }
-            updatedGame = new GameData(game.gameID(), username, game.blackUsername(), game.gameName());
+            updatedGame = new GameData(game.gameID(), username, game.blackUsername(), game.gameName(), game.game());
         }
         else if (request.playerColor().equals("BLACK")) {
             if (game.blackUsername() != null && !game.blackUsername().isBlank()) {
                 throw new DataAccessException("already taken");
             }
-            updatedGame = new GameData(game.gameID(), game.whiteUsername(), username, game.gameName());
+            updatedGame = new GameData(game.gameID(), game.whiteUsername(), username, game.gameName(), game.game());
         } else {
             throw new DataAccessException("bad request");
         }

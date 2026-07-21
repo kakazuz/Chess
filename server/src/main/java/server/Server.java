@@ -22,6 +22,7 @@ public class Server {
             authDAO = new SQLAuthDAO();
             gameDAO = new SQLGameDAO();
         } catch (DataAccessException e) {
+            e.printStackTrace();
             throw new RuntimeException("failed to initialize database(config)", e);
         }
 

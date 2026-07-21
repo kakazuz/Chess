@@ -45,7 +45,7 @@ public class SQLGameDAO implements GameDAO {
     public int createGame(String gameName) throws DataAccessException {
         var statement = "INSERT INTO game (whiteUsername, blackUsername, gameName, game) VALUES (?, ?, ?, ?)";
         try (var conn = DatabaseManager.getConnection()) {
-            try (var preparedStatement = conn.prepareStatement(statement)) {
+            try (var preparedStatement = conn.prepareStatement(statement, java.sql.Statement.RETURN_GENERATED_KEYS)) {
                 ChessGame newGame = new ChessGame();
                 String gameJson = new com.google.gson.Gson().toJson(newGame);
 

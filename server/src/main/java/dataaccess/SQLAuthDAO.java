@@ -64,7 +64,7 @@ public class SQLAuthDAO implements AuthDAO {
                                 rs.getString(2)
                         );
                     } else {
-                        throw new DataAccessException("auth not found");
+                        throw new DataAccessException("unauthorized");
                     }
                 }
             }
