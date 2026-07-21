@@ -15,12 +15,10 @@ public class ChessPiece {
 
     private final ChessGame.TeamColor pieceColor;
     private final PieceType type;
-    public final PieceMovesCalculators.PieceMovesCalculator calculator;
 
     public ChessPiece(ChessGame.TeamColor pieceColor, ChessPiece.PieceType type) {
         this.pieceColor = pieceColor;
         this.type = type;
-        this.calculator = createCalculator(type);
     }
 
     private PieceMovesCalculators.PieceMovesCalculator createCalculator(PieceType type) {
@@ -84,6 +82,7 @@ public class ChessPiece {
      * @return Collection of valid moves
      */
     public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition myPosition) {
+        PieceMovesCalculators.PieceMovesCalculator calculator = createCalculator(type);
         return calculator.pieceMoves(board, myPosition);
     }
 
