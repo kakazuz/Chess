@@ -51,7 +51,10 @@ public class UserService {
         try {
             user = userDAO.getUser(request.username());
         } catch (DataAccessException e) {
-            throw new DataAccessException("unauthorized");
+            if (e.getMessage().equals("user not found") || e.getMessage().equals("unauthorized")) {
+                throw new DataAccessException("unauthorized");
+            }
+            throw e;
         }
         if (!org.mindrot.jbcrypt.BCrypt.checkpw(request.password(), user.password())) {
             throw new DataAccessException("unauthorized");
