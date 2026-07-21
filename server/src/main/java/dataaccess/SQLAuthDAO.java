@@ -1,5 +1,6 @@
 package dataaccess;
 import model.AuthData;
+import model.UserData;
 
 import java.sql.SQLException;
 
@@ -35,18 +36,57 @@ public class SQLAuthDAO implements AuthDAO {
 
     @Override
     public void createAuth(AuthData auth) throws DataAccessException {
-        // implement
+        var statement = "INSERT INTO auth (authToken, username) VALUES (?, ?)";
+        try (var conn = DatabaseManager.getConnection()) {
+            try (var preparedStatement = conn.prepareStatement(statement)) {
+                preparedStatement.setString(1, auth.authToken());
+                preparedStatement.setString(2, auth.username());
+                preparedStatement.executeUpdate();
+            }
+        } catch (SQLException e) {
+            if (e.getMessage().contains("invalid authToken")) {
+                throw new DataAccessException("failed authorization");
+            }
+            throw new DataAccessException(e.getMessage());
+        }
     }
 
     @Override
     public AuthData getAuth(String authToken) throws DataAccessException {
-        // implement
-        return null;
+        var statement = "SELECT authToken, username FROM auth WHERE authToken = ?";
+        try (var conn = DatabaseManager.getConnection()) {
+            try (var preparedStatement = conn.prepareStatement(statement)) {
+                preparedStatement.setString(1, authToken);
+                try(var rs = preparedStatement.executeQuery()) {
+                    if(rs.next()) {
+                        return new AuthData(
+                                rs.getString(1),
+                                rs.getString(2)
+                        );
+                    } else {
+                        throw new DataAccessException("auth not found");
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException(e.getMessage());
+        }
     }
 
     @Override
     public void deleteAuth(String authToken) throws DataAccessException {
-        // implement
+        var statement = "DELETE FROM auth WHERE authToken = ?";
+        try (var conn = DatabaseManager.getConnection()) {
+            try (var preparedStatement = conn.prepareStatement(statement)) {
+                preparedStatement.setString(1, authToken);
+                int rowsAffected = preparedStatement.executeUpdate();
+                if (rowsAffected == 0) {
+                    throw new DataAccessException("unauthorized");
+                }
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException(e.getMessage());
+        }
     }
 
     @Override
