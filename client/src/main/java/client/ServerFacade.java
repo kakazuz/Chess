@@ -33,11 +33,14 @@ public class ServerFacade {
     }
 
     public void logout(String authToken) throws Exception {
+        makeRequest("DELETE", "/session", null, null, authToken);
     }
 
 
     public int createGame(String authToken, String gameName) throws Exception {
-        return 0;
+        var request = Map.of("gameName", gameName);
+        var response = makeRequest("POST", "/game", request, Map.class, authToken);
+        return ((Double) response.get("gameID")).intValue();
     }
 
     public Collection<GameData> listGames(String authToken) throws Exception {
