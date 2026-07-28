@@ -44,10 +44,19 @@ public class ServerFacade {
     }
 
     public Collection<GameData> listGames(String authToken) throws Exception {
-        return null;
+        Map response = makeRequest("GET", "/game", null, Map.class, authToken);
+        var gamesList = (java.util.List<Map>) response.get("games");
+        var result = new java.util.ArrayList<GameData>();
+        for (Map gameMap : gamesList) {
+            GameData game = gson.fromJson(gson.toJson(gameMap), GameData.class);
+            result.add(game);
+        }
+        return result;
     }
 
     public void joinGame(String authToken, int gameID, String playerColor) throws Exception {
+        var request = Map.of("gameID", gameID, "playerColor", playerColor);
+        makeRequest("PUT", "/game", request, null, authToken);
     }
 
     private <T> T makeRequest(String method, String path, Object request,
