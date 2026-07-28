@@ -23,11 +23,13 @@ public class ServerFacade {
     }
 
     public AuthData register(String username, String password, String email) throws Exception {
-        return null;
+        var request = Map.of("username", username, "password", password, "email", email);
+        return makeRequest("POST", "/user", request, AuthData.class, null);
     }
 
     public AuthData login(String username, String password) throws Exception {
-        return null;
+        var request = Map.of("username", username, "password", password);
+        return makeRequest("POST", "/session", request, AuthData.class, null);
     }
 
     public void logout(String authToken) throws Exception {
