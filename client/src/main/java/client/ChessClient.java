@@ -223,6 +223,42 @@ public class ChessClient {
         }
     }
 
+    private void doObserve(String[] parts) {
+        if (parts.length < 2) {
+            System.out.println("Usage: observe <ID>");
+            return;
+        }
+
+        try {
+            int index = Integer.parseInt(parts[1].trim()) - 1;
+
+            if (index < 0 || index >= games.size()) {
+                System.out.println("Invalid game number.");
+                return;
+            }
+
+            GameData selected = games.get(index);
+            System.out.println("Observing game \"" + selected.gameName() + "\"");
+
+        } catch (NumberFormatException e) {
+            System.out.println("Game number must be an integer.");
+        } catch (Exception e) {
+            System.out.println("Failed to observe game: " + e.getMessage());
+        }
+    }
+
+    private void doLogout() {
+        try {
+            server.logout(authToken);
+            authToken = null;
+            username = null;
+            games.clear();
+            System.out.println("Logged out.");
+        } catch (Exception e) {
+            System.out.println("Logout failed: " + e.getMessage());
+        }
+    }
+
     private String[] parse(String input) {
         return input.trim().split("\\s+", 2);
     }
