@@ -1,6 +1,7 @@
 package client;
 
 import model.AuthData;
+import model.GameData;
 
 import java.util.Scanner;
 
@@ -11,6 +12,7 @@ public class ChessClient {
 
     private String authToken = null;
     private String username = null;
+    private java.util.List<GameData> games = new java.util.ArrayList<>();
 
     public ChessClient(String serverUrl) {
         server = new ServerFacade(serverUrl);
@@ -144,6 +146,80 @@ public class ChessClient {
             System.out.println("Registered and logged in as " + username);
         } catch (Exception e) {
             System.out.println("Registration failed: " + e.getMessage());
+        }
+    }
+
+    private void doList() {
+        try {
+            games = new java.util.ArrayList<>(server.listGames(authToken));
+
+            if (games.isEmpty()) {
+                System.out.println("No games available.");
+                return;
+            }
+
+            System.out.println("Current games:");
+            for (int i = 0; i < games.size(); i++) {
+                GameData g = games.get(i);
+                String white = g.whiteUsername() != null ? g.whiteUsername() : "(waiting)";
+                String black = g.blackUsername() != null ? g.blackUsername() : "(waiting)";
+                System.out.printf("%d. %s  |  White: %s  |  Black: %s%n",
+                        i + 1, g.gameName(), white, black);
+            }
+        } catch (Exception e) {
+            System.out.println("Failed to list games: " + e.getMessage());
+        }
+    }
+
+    private void doCreate(String[] parts) {
+        if (parts.length < 2) {
+            System.out.println("Usage: create <NAME>");
+            return;
+        }
+        String gameName = parts[1].trim();
+
+        try {
+            server.createGame(authToken, gameName);
+            System.out.println("Created game " + gameName);
+        } catch (Exception e) {
+            System.out.println("Failed to create game: " + e.getMessage());
+        }
+    }
+
+    private void doJoin(String[] parts) {
+        if (parts.length < 2) {
+            System.out.println("Usage: join <ID> [WHITE][BLACK]");
+            return;
+        }
+
+        String[] args = parts[1].split("\\s+");
+        if (args.length < 2) {
+            System.out.println("Usage: join <ID> [WHITE][BLACK]");
+            return;
+        }
+
+        try {
+            int index = Integer.parseInt(args[0]) - 1;
+            String color = args[1].toUpperCase();
+
+            if (index < 0 || index >= games.size()) {
+                System.out.println("Invalid game number.");
+                return;
+            }
+            if (!color.equals("WHITE") && !color.equals("BLACK")) {
+                System.out.println("Color must be WHITE or BLACK.");
+                return;
+            }
+
+            GameData selected = games.get(index);
+            server.joinGame(authToken, selected.gameID(), color);
+
+            System.out.println("Joined game \"" + selected.gameName() + "\" as " + color);
+
+        } catch (NumberFormatException e) {
+            System.out.println("Game number must be an integer.");
+        } catch (Exception e) {
+            System.out.println("Failed to join game: " + e.getMessage());
         }
     }
 
