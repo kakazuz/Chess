@@ -1,5 +1,7 @@
 package client;
 
+import model.AuthData;
+
 import java.util.Scanner;
 
 public class ChessClient {
@@ -33,15 +35,15 @@ public class ChessClient {
     private boolean doPrelogin() {
         System.out.print("[LOGGED_OUT] >>> ");
         String input = scanner.nextLine().trim();
-        String[] parts = input.split("\\s+", 2);
+        String[] parts = parse(input);
         String command = parts[0].toLowerCase();
 
         try {
             switch (command) {
                 case "help" -> printPreloginHelp();
                 case "quit", "exit" -> { return false; }
-                case "login" -> doLogin();
-                case "register" -> doRegister();
+                case "login" -> doLogin(parts);
+                case "register" -> doRegister(parts);
                 default -> System.out.println("Unknown command. Type 'Help' for options.");
             }
         } catch (Exception e) {
@@ -51,8 +53,25 @@ public class ChessClient {
     }
 
     private boolean doPostlogin() {
-        System.out.print("[" + username + "] >>> ");
+        System.out.print("[LOGGED_IN] >>> ");
         String input = scanner.nextLine().trim();
+        String[] parts = parse(input);
+        String command = parts[0].toLowerCase();
+
+        try {
+            switch (command) {
+                case "help" -> printPostloginHelp();
+                case "quit", "exit" -> { return false; }
+                case "list" -> doList();
+                case "create" -> doCreate();
+                case " join" -> doJoin();
+                case " observe" -> doObserve();
+                case " logout" -> doLogout();
+                default -> System.out.println("Unknown command. Type 'Help' for options.");
+            }
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
         return true;
     }
 
@@ -65,10 +84,48 @@ public class ChessClient {
             """);
     }
 
-    private void doLogin() {
+    private void printPostloginHelp() {
+        System.out.println("""
+            create <NAME>            - a game
+            list                     - games
+            join <ID> [WHITE][BACK]  - a game
+            observe <ID>             - a game
+            logout                   - when you are done
+            quit                     - playing chess
+            help                     - with possible commands
+            """);
+    }
+
+    private void doLogin(String[] parts) {
+        if (parts.length < 2) {
+            System.out.println("Usage: login <USERNAME> <PASSWORD>");
+            return;
+        }
+
+        String[] args = parts[1].split("\\s+");
+        if (args.length < 2) {
+            System.out.println("Usage: login <USERNAME> <PASSWORD>");
+            return;
+        }
+
+        String username = args[0];
+        String password = args[1];
+
+        try {
+            AuthData auth = server.login(username, password);
+            this.authToken = auth.authToken();
+            this.username = auth.username();
+            System.out.println("Logged in as " + username);
+        } catch (Exception e) {
+            System.out.println("Login failed: " + e.getMessage());
+        }
     }
 
     private void doRegister() {
+    }
+
+    private String[] parse(String input) {
+        return input.trim().split("\\s+", 2);
     }
 
     public static void main(String[] args) {
