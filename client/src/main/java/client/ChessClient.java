@@ -63,10 +63,10 @@ public class ChessClient {
                 case "help" -> printPostloginHelp();
                 case "quit", "exit" -> { return false; }
                 case "list" -> doList();
-                case "create" -> doCreate();
-                case " join" -> doJoin();
-                case " observe" -> doObserve();
-                case " logout" -> doLogout();
+                case "create" -> doCreate(parts);
+                case "join" -> doJoin(parts);
+                case "observe" -> doObserve(parts);
+                case "logout" -> doLogout();
                 default -> System.out.println("Unknown command. Type 'Help' for options.");
             }
         } catch (Exception e) {
@@ -121,7 +121,30 @@ public class ChessClient {
         }
     }
 
-    private void doRegister() {
+    private void doRegister(String[] parts) {
+        if (parts.length < 2) {
+            System.out.println("Usage: register <USERNAME> <PASSWORD> <EMAIL>");
+            return;
+        }
+
+        String[] args = parts[1].split("\\s+");
+        if (args.length < 3) {
+            System.out.println("Usage: register <USERNAME> <PASSWORD> <EMAIL>");
+            return;
+        }
+
+        String username = args[0];
+        String password = args[1];
+        String email = args[2];
+
+        try {
+            AuthData auth = server.register(username, password, email);
+            this.authToken = auth.authToken();
+            this.username = auth.username();
+            System.out.println("Registered and logged in as " + username);
+        } catch (Exception e) {
+            System.out.println("Registration failed: " + e.getMessage());
+        }
     }
 
     private String[] parse(String input) {
