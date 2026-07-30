@@ -274,9 +274,9 @@ public class ChessClient {
     private void drawBoard(ChessGame game, boolean whitePerspective) {
         ChessBoard board = game.getBoard();
 
-        final String LIGHT = "\u001B[48;5;220m";   // Gold
-        final String DARK  = "\u001B[48;5;124m";   // Cardinal Red
-        final String RESET = RESET_BG_COLOR + RESET_TEXT_COLOR;
+        final String light = "\u001B[48;5;220m";   // Gold
+        final String dark  = "\u001B[48;5;124m";   // Cardinal Red
+        final String reset = RESET_BG_COLOR + RESET_TEXT_COLOR;
 
         System.out.println();
 
@@ -297,14 +297,14 @@ public class ChessClient {
                 ChessPiece piece = board.getPiece(pos);
 
                 boolean isLight = (actualRow + actualCol) % 2 != 0;
-                String bg = isLight ? LIGHT : DARK;
+                String bg = isLight ? light : dark;
 
                 String pieceStr = EMPTY;
                 if (piece != null) {
                     pieceStr = getPieceChar(piece);
                 }
 
-                System.out.print(bg + pieceStr + RESET);
+                System.out.print(bg + pieceStr + reset);
             }
             System.out.println(" " + displayRow);
         }
@@ -328,11 +328,4 @@ public class ChessClient {
         return SET_TEXT_COLOR_BLACK + pieceSymbol + RESET_TEXT_COLOR;
     }
 
-    public static void main(String[] args) {
-        String serverUrl = "http://localhost:8080";
-        if (args.length >= 1) {
-            serverUrl = args[0];
-        }
-        new ChessClient(serverUrl).run();
-    }
 }
