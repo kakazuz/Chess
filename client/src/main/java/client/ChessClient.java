@@ -1,9 +1,13 @@
 package client;
 
+import chess.*;
+import ui.EscapeSequences;
 import model.AuthData;
 import model.GameData;
 
 import java.util.Scanner;
+
+import static ui.EscapeSequences.*;
 
 public class ChessClient {
 
@@ -215,6 +219,8 @@ public class ChessClient {
             server.joinGame(authToken, selected.gameID(), color);
 
             System.out.println("Joined game \"" + selected.gameName() + "\" as " + color);
+            ChessGame gameToDraw = selected.game() != null ? selected.game() : new ChessGame();
+            drawBoard(gameToDraw, color.equals("WHITE"));
 
         } catch (NumberFormatException e) {
             System.out.println("Game number must be an integer.");
@@ -239,6 +245,8 @@ public class ChessClient {
 
             GameData selected = games.get(index);
             System.out.println("Observing game \"" + selected.gameName() + "\"");
+            ChessGame gameToDraw = selected.game() != null ? selected.game() : new ChessGame();
+            drawBoard(gameToDraw, true);
 
         } catch (NumberFormatException e) {
             System.out.println("Game number must be an integer.");
@@ -261,6 +269,63 @@ public class ChessClient {
 
     private String[] parse(String input) {
         return input.trim().split("\\s+", 2);
+    }
+
+    private void drawBoard(ChessGame game, boolean whitePerspective) {
+        ChessBoard board = game.getBoard();
+
+        final String LIGHT = "\u001B[48;5;220m";   // Gold
+        final String DARK  = "\u001B[48;5;124m";   // Cardinal Red
+        final String RESET = RESET_BG_COLOR + RESET_TEXT_COLOR;
+
+        System.out.println();
+
+        String headers = whitePerspective
+                ? "    a  b  c  d  e  f  g  h"
+                : "    h  g  f  e  d  c  b  a";
+        System.out.println(headers);
+
+        for (int row = 0; row < 8; row++) {
+            int displayRow = whitePerspective ? 8 - row : row + 1;
+            System.out.print(" " + displayRow + " ");
+
+            for (int col = 0; col < 8; col++) {
+                int actualRow = whitePerspective ? 8 - row : row + 1;
+                int actualCol = whitePerspective ? col + 1 : 8 - col;
+
+                ChessPosition pos = new ChessPosition(actualRow, actualCol);
+                ChessPiece piece = board.getPiece(pos);
+
+                boolean isLight = (actualRow + actualCol) % 2 != 0;
+                String bg = isLight ? LIGHT : DARK;
+
+                String pieceStr = EMPTY;
+                if (piece != null) {
+                    pieceStr = getPieceChar(piece);
+                }
+
+                System.out.print(bg + pieceStr + RESET);
+            }
+            System.out.println(" " + displayRow);
+        }
+
+        System.out.println(headers);
+        System.out.println();
+    }
+
+    private String getPieceChar(ChessPiece piece) {
+        boolean isWhite = piece.getTeamColor() == ChessGame.TeamColor.WHITE;
+
+        String pieceSymbol = switch (piece.getPieceType()) {
+            case KING   -> isWhite ? WHITE_KING   : BLACK_KING;
+            case QUEEN  -> isWhite ? WHITE_QUEEN  : BLACK_QUEEN;
+            case BISHOP -> isWhite ? WHITE_BISHOP : BLACK_BISHOP;
+            case KNIGHT -> isWhite ? WHITE_KNIGHT : BLACK_KNIGHT;
+            case ROOK   -> isWhite ? WHITE_ROOK   : BLACK_ROOK;
+            case PAWN   -> isWhite ? WHITE_PAWN   : BLACK_PAWN;
+        };
+
+        return SET_TEXT_COLOR_BLACK + pieceSymbol + RESET_TEXT_COLOR;
     }
 
     public static void main(String[] args) {
