@@ -29,16 +29,16 @@ public class ChessClient {
         boolean running = true;
         while (running) {
             if (authToken == null) {
-                running = Prelogin();
+                running = preLogin();
             } else {
-                running = Postlogin();
+                running = postLogin();
             }
         }
 
         System.out.println("Thanks for playing!");
     }
 
-    private boolean Prelogin() {
+    private boolean preLogin() {
         System.out.print("[LOGGED_OUT] >>> ");
         String input = scanner.nextLine().trim();
         String[] parts = parse(input);
@@ -48,8 +48,8 @@ public class ChessClient {
             switch (command) {
                 case "help" -> printPreloginHelp();
                 case "quit", "exit" -> { return false; }
-                case "login" -> Login(parts);
-                case "register" -> Register(parts);
+                case "login" -> login(parts);
+                case "register" -> register(parts);
                 default -> System.out.println("Unknown command. Type 'Help' for options.");
             }
         } catch (Exception e) {
@@ -58,7 +58,7 @@ public class ChessClient {
         return true;
     }
 
-    private boolean Postlogin() {
+    private boolean postLogin() {
         System.out.print("[LOGGED_IN] >>> ");
         String input = scanner.nextLine().trim();
         String[] parts = parse(input);
@@ -68,11 +68,11 @@ public class ChessClient {
             switch (command) {
                 case "help" -> printPostloginHelp();
                 case "quit", "exit" -> { return false; }
-                case "list" -> List();
-                case "create" -> Create(parts);
-                case "join" -> Join(parts);
-                case "observe" -> Observe(parts);
-                case "logout" -> Logout();
+                case "list" -> list();
+                case "create" -> create(parts);
+                case "join" -> join(parts);
+                case "observe" -> observe(parts);
+                case "logout" -> logout();
                 default -> System.out.println("Unknown command. Type 'Help' for options.");
             }
         } catch (Exception e) {
@@ -102,7 +102,7 @@ public class ChessClient {
             """);
     }
 
-    private void Login(String[] parts) {
+    private void login(String[] parts) {
         if (parts.length < 2) {
             System.out.println("Usage: login <USERNAME> <PASSWORD>");
             return;
@@ -127,7 +127,7 @@ public class ChessClient {
         }
     }
 
-    private void Register(String[] parts) {
+    private void register(String[] parts) {
         if (parts.length < 2) {
             System.out.println("Usage: register <USERNAME> <PASSWORD> <EMAIL>");
             return;
@@ -153,7 +153,7 @@ public class ChessClient {
         }
     }
 
-    private void List() {
+    private void list() {
         try {
             games = new java.util.ArrayList<>(server.listGames(authToken));
 
@@ -175,7 +175,7 @@ public class ChessClient {
         }
     }
 
-    private void Create(String[] parts) {
+    private void create(String[] parts) {
         if (parts.length < 2) {
             System.out.println("Usage: create <NAME>");
             return;
@@ -190,7 +190,7 @@ public class ChessClient {
         }
     }
 
-    private void Join(String[] parts) {
+    private void join(String[] parts) {
         if (parts.length < 2) {
             System.out.println("Usage: join <ID> [WHITE][BLACK]");
             return;
@@ -229,7 +229,7 @@ public class ChessClient {
         }
     }
 
-    private void Observe(String[] parts) {
+    private void observe(String[] parts) {
         if (parts.length < 2) {
             System.out.println("Usage: observe <ID>");
             return;
@@ -255,7 +255,7 @@ public class ChessClient {
         }
     }
 
-    private void Logout() {
+    private void logout() {
         try {
             server.logout(authToken);
             authToken = null;
