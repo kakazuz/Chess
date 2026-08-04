@@ -46,6 +46,15 @@ public class Server {
         javalin.put("/game", joinGameHandler::handle);
         javalin.delete("/db", clearHandler::handle);
 
+        WebSocketHandler webSocketHandler = new WebSocketHandler(gameService, authDAO, gameDAO);
+
+        javalin.ws("/ws", ws -> {
+            ws.onConnect(webSocketHandler::onConnect);
+            ws.onMessage(ctx -> webSocketHandler.onMessage(ctx, ctx.message()));
+            ws.onClose(webSocketHandler::onClose);
+            ws.onError(ctx -> System.out.println("WebSocket error: " + ctx.error()));
+        });
+
     }
 
     public int run(int desiredPort) {
