@@ -4,6 +4,8 @@ import com.google.gson.Gson;
 import dataaccess.AuthDAO;
 import dataaccess.GameDAO;
 import io.javalin.websocket.WsContext;
+import model.AuthData;
+import model.GameData;
 import service.GameService;
 import websocket.commands.UserGameCommand;
 import websocket.messages.ServerMessage;
@@ -51,7 +53,38 @@ public class WebSocketHandler {
     }
 
     private void handleConnect(WsContext ctx, UserGameCommand command) {
-        System.out.println("CONNECT from game " + command.getGameID());
+        try {
+            AuthData auth = authDAO.getAuth(command.getAuthToken());
+            String username = auth.username();
+
+            GameData gameData = gameDAO.getGame(command.getGameID());
+
+            gameConnections.putIfAbsent(command.getGameID(), new ConcurrentHashMap<>());
+            gameConnections.get(command.getGameID()).put(ctx.sessionId(), ctx);
+
+            ctx.attribute("username", username);
+            ctx.attribute("gameID", command.getGameID());
+
+            ServerMessage loadGame = new ServerMessage(ServerMessage.ServerMessageType.LOAD_GAME);
+            loadGame.setGame(gameData.game());
+            ctx.send(gson.toJson(loadGame));
+
+            String notificationText;
+            if (username.equals(gameData.whiteUsername())) {
+                notificationText = username + " joined as white";
+            } else if (username.equals(gameData.blackUsername())) {
+                notificationText = username + " joined as black";
+            } else {
+                notificationText = username + " joined as an observer";
+            }
+
+            ServerMessage notification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION);
+            notification.setMessage(notificationText);
+            broadcast(command.getGameID(), notification, ctx);
+
+        } catch (Exception e) {
+            sendError(ctx, "Error: " + e.getMessage());
+        }
     }
 
     private void handleMakeMove(WsContext ctx, UserGameCommand command) {
@@ -67,5 +100,17 @@ public class WebSocketHandler {
         ServerMessage error = new ServerMessage(ServerMessage.ServerMessageType.ERROR);
         error.setErrorMessage(errorMessage);
         ctx.send(gson.toJson(error));
+    }
+
+    private void broadcast(int gameID, ServerMessage message, WsContext exclude) {
+        var connections = gameConnections.get(gameID);
+        if (connections == null) return;
+
+        String json = gson.toJson(message);
+        for (WsContext connection : connections.values()) {
+            if (exclude == null || !connection.sessionId().equals(exclude.sessionId())) {
+                connection.send(json);
+            }
+        }
     }
 }
