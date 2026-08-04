@@ -91,6 +91,44 @@ public class WebSocketHandler {
     }
 
     private void handleLeave(WsContext ctx, UserGameCommand command) {
+        try {
+            AuthData auth = authDAO.getAuth(command.getAuthToken());
+            String username = auth.username();
+            int gameID = command.getGameID();
+
+            var connections = gameConnections.get(gameID);
+            if (connections != null) {
+                connections.remove(ctx.sessionId());
+                if (connections.isEmpty()) {
+                    gameConnections.remove(gameID);
+                }
+            }
+
+            GameData gameData = gameDAO.getGame(gameID);
+            String white = gameData.whiteUsername();
+            String black = gameData.blackUsername();
+
+            if (username.equals(white) || username.equals(black)) {
+                String newWhite = username.equals(white) ? null : white;
+                String newBlack = username.equals(black) ? null : black;
+
+                GameData updated = new GameData(
+                        gameData.gameID(),
+                        newWhite,
+                        newBlack,
+                        gameData.gameName(),
+                        gameData.game()
+                );
+                gameDAO.updateGame(updated);
+            }
+
+            ServerMessage notification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION);
+            notification.setMessage(username + " left the game");
+            broadcast(gameID, notification, ctx);
+
+        } catch (Exception e) {
+            sendError(ctx, "Error: " + e.getMessage());
+        }
     }
 
     private void handleResign(WsContext ctx, UserGameCommand command) {
