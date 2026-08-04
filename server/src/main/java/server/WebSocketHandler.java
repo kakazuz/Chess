@@ -1,5 +1,7 @@
 package server;
 
+import chess.ChessGame;
+import chess.ChessMove;
 import com.google.gson.Gson;
 import dataaccess.AuthDAO;
 import dataaccess.GameDAO;
@@ -88,6 +90,81 @@ public class WebSocketHandler {
     }
 
     private void handleMakeMove(WsContext ctx, UserGameCommand command) {
+        try {
+            AuthData auth = authDAO.getAuth(command.getAuthToken());
+            String username = auth.username();
+            int gameID = command.getGameID();
+            ChessMove move = command.getMove();
+
+            if (move == null) {
+                sendError(ctx, "Error: No move provided");
+                return;
+            }
+
+            GameData gameData = gameDAO.getGame(gameID);
+            ChessGame game = gameData.game();
+
+            if (game.getTeamTurn() == null) {
+                sendError(ctx, "Error: Game is already over");
+                return;
+            }
+
+            ChessGame.TeamColor playerColor = null;
+            if (username.equals(gameData.whiteUsername())) {
+                playerColor = ChessGame.TeamColor.WHITE;
+            } else if (username.equals(gameData.blackUsername())) {
+                playerColor = ChessGame.TeamColor.BLACK;
+            } else {
+                sendError(ctx, "Error: You are not a player in this game");
+                return;
+            }
+
+            if (game.getTeamTurn() != playerColor) {
+                sendError(ctx, "Error: It is not your turn");
+                return;
+            }
+
+            game.makeMove(move);
+
+            GameData updated = new GameData(
+                    gameData.gameID(),
+                    gameData.whiteUsername(),
+                    gameData.blackUsername(),
+                    gameData.gameName(),
+                    game
+            );
+            gameDAO.updateGame(updated);
+
+            ServerMessage loadGame = new ServerMessage(ServerMessage.ServerMessageType.LOAD_GAME);
+            loadGame.setGame(game);
+            broadcast(gameID, loadGame, null);
+
+            String moveDescription = username + " moved";
+            ServerMessage moveNotification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION);
+            moveNotification.setMessage(moveDescription);
+            broadcast(gameID, moveNotification, ctx);
+
+            ChessGame.TeamColor opponent = (playerColor == ChessGame.TeamColor.WHITE)
+                    ? ChessGame.TeamColor.BLACK
+                    : ChessGame.TeamColor.WHITE;
+
+            if (game.isInCheckmate(opponent)) {
+                ServerMessage notif = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION);
+                notif.setMessage(username + " checkmated their opponent");
+                broadcast(gameID, notif, null);
+            } else if (game.isInCheck(opponent)) {
+                ServerMessage notif = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION);
+                notif.setMessage("Check!");
+                broadcast(gameID, notif, null);
+            } else if (game.isInStalemate(opponent)) {
+                ServerMessage notif = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION);
+                notif.setMessage("Stalemate!");
+                broadcast(gameID, notif, null);
+            }
+
+        } catch (Exception e) {
+            sendError(ctx, "Error: " + e.getMessage());
+        }
     }
 
     private void handleLeave(WsContext ctx, UserGameCommand command) {
@@ -132,6 +209,42 @@ public class WebSocketHandler {
     }
 
     private void handleResign(WsContext ctx, UserGameCommand command) {
+        try {
+            AuthData auth = authDAO.getAuth(command.getAuthToken());
+            String username = auth.username();
+            int gameID = command.getGameID();
+
+            GameData gameData = gameDAO.getGame(gameID);
+            ChessGame game = gameData.game();
+
+            if (!username.equals(gameData.whiteUsername()) && !username.equals(gameData.blackUsername())) {
+                sendError(ctx, "Error: Only players can resign");
+                return;
+            }
+
+            if (game.getTeamTurn() == null) {
+                sendError(ctx, "Error: Game is already over");
+                return;
+            }
+
+            game.setTeamTurn(null);
+
+            GameData updated = new GameData(
+                    gameData.gameID(),
+                    gameData.whiteUsername(),
+                    gameData.blackUsername(),
+                    gameData.gameName(),
+                    game
+            );
+            gameDAO.updateGame(updated);
+
+            ServerMessage notification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION);
+            notification.setMessage(username + " resigned");
+            broadcast(gameID, notification, null);
+
+        } catch (Exception e) {
+            sendError(ctx, "Error: " + e.getMessage());
+        }
     }
 
     private void sendError(WsContext ctx, String errorMessage) {
