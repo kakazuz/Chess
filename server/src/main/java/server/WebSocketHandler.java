@@ -52,6 +52,17 @@ public class WebSocketHandler {
 
     public void onClose(WsContext ctx) {
         System.out.println("Client disconnected: " + ctx.sessionId());
+
+        Integer gameID = ctx.attribute("gameID");
+        if (gameID != null) {
+            var connections = gameConnections.get(gameID);
+            if (connections != null) {
+                connections.remove(ctx.sessionId());
+                if (connections.isEmpty()) {
+                    gameConnections.remove(gameID);
+                }
+            }
+        }
     }
 
     private void handleConnect(WsContext ctx, UserGameCommand command) {
@@ -264,4 +275,5 @@ public class WebSocketHandler {
             }
         }
     }
+
 }
