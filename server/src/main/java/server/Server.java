@@ -5,12 +5,14 @@ import io.javalin.*;
 import service.ClearService;
 import service.UserService;
 import service.GameService;
+import java.time.Duration;
 
 public class Server {
 
     private final Javalin javalin;
 
     public Server() {
+
         javalin = Javalin.create(config -> config.staticFiles.add("web"));
 
         // Register your endpoints and exception handlers here.
@@ -49,7 +51,10 @@ public class Server {
         WebSocketHandler webSocketHandler = new WebSocketHandler(gameService, authDAO, gameDAO);
 
         javalin.ws("/ws", ws -> {
-            ws.onConnect(webSocketHandler::onConnect);
+            ws.onConnect(ctx -> {
+                ctx.session.setIdleTimeout(Duration.ofMinutes(30));
+                webSocketHandler.onConnect(ctx);
+            });
             ws.onMessage(ctx -> webSocketHandler.onMessage(ctx, ctx.message()));
             ws.onClose(webSocketHandler::onClose);
             ws.onError(ctx -> System.out.println("WebSocket error: " + ctx.error()));
