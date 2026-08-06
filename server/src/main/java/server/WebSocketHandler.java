@@ -2,6 +2,7 @@ package server;
 
 import chess.ChessGame;
 import chess.ChessMove;
+import chess.ChessPosition;
 import com.google.gson.Gson;
 import dataaccess.AuthDAO;
 import dataaccess.GameDAO;
@@ -158,7 +159,13 @@ public class WebSocketHandler {
             loadGame.setGame(game);
             broadcast(gameID, loadGame, null);
 
-            String moveDescription = username + " moved";
+            ChessPosition start = move.getStartPosition();
+            ChessPosition end = move.getEndPosition();
+
+            String startSquare = toSquare(start);
+            String endSquare = toSquare(end);
+
+            String moveDescription = " moved from " + startSquare + " to " + endSquare;
             ServerMessage moveNotification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION);
             moveNotification.setMessage(moveDescription);
             broadcast(gameID, moveNotification, ctx);
@@ -169,7 +176,7 @@ public class WebSocketHandler {
                 broadcast(gameID, notif, null);
             } else if (game.isInCheck(opponent)) {
                 ServerMessage notif = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION);
-                notif.setMessage("Check!");
+                notif.setMessage(username + "is in Check!");
                 broadcast(gameID, notif, null);
             } else if (game.isInStalemate(opponent)) {
                 ServerMessage notif = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION);
@@ -261,6 +268,11 @@ public class WebSocketHandler {
         } catch (Exception e) {
             sendError(ctx, "Error: " + e.getMessage());
         }
+    }
+
+    private String toSquare(ChessPosition pos) {
+        char col = (char) ('a' + pos.getColumn() - 1);
+        return "" + col + pos.getRow();
     }
 
     private void sendError(WsContext ctx, String errorMessage) {
