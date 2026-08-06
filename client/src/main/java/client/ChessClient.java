@@ -6,6 +6,7 @@ import model.AuthData;
 import model.GameData;
 import websocket.messages.ServerMessage;
 
+import java.util.Collection;
 import java.util.Scanner;
 
 import static ui.EscapeSequences.*;
@@ -243,19 +244,23 @@ public class ChessClient implements WebSocketFacade.ServerMessageHandler{
             }
 
             GameData selected = games.get(index);
+
             server.joinGame(authToken, selected.gameID(), color);
+
             this.currentGameID = selected.gameID();
             this.whitePerspective = color.equals("WHITE");
             this.inGameplay = true;
+
+            System.out.println("Joined game \"" + selected.gameName() + "\" as " + color);
 
             this.webSocket = new WebSocketFacade(serverUrl, this);
             this.webSocket.connect(authToken, currentGameID);
 
             doGameplay();
 
-            System.out.println("Joined game \"" + selected.gameName() + "\" as " + color);
-            ChessGame gameToDraw = selected.game() != null ? selected.game() : new ChessGame();
-            drawBoard(gameToDraw, color.equals("WHITE"));
+            inGameplay = false;
+            currentGame = null;
+            currentGameID = -1;
 
         } catch (NumberFormatException e) {
             System.out.println("Game number must be an integer.");
@@ -371,35 +376,60 @@ public class ChessClient implements WebSocketFacade.ServerMessageHandler{
                         if (currentGame != null) drawBoard(currentGame, whitePerspective);
                     }
                     case "leave" -> {
-                        webSocket.leave(authToken, currentGameID);
+                        try {
+                            if (webSocket != null) {
+                                webSocket.leave(authToken, currentGameID);
+                                webSocket.close();
+                                webSocket = null;
+                            }
+                        } catch (Exception e) {
+                            System.out.println("Leave error: " + e.getMessage());
+                        }
                         inGameplay = false;
+                        System.out.println("Left gameplay.");
                     }
-                    case "resign" -> webSocket.resign(authToken, currentGameID);
+                    case "resign" -> {
+                        System.out.print("Are you sure you want to resign? (yes/no): ");
+                        String answer = scanner.nextLine().trim().toLowerCase();
+                        if (answer.equals("yes") || answer.equals("y")) {
+                            if (webSocket == null) {
+                                System.out.println("Not connected.");
+                            } else {
+                                webSocket.resign(authToken, currentGameID);
+                            }
+                        } else {
+                            System.out.println("Resign cancelled.");
+                        }
+                    }
                     case "move" -> doMakeMove(parts);
-                    case "highlight" -> System.out.println("Highlight not implemented yet");
+                    case "highlight" -> doHighlight(parts);
                     default -> System.out.println("Unknown command. Type 'help'.");
                 }
             } catch (Exception e) {
                 System.out.println("Error: " + e.getMessage());
             }
         }
-        System.out.println("Left gameplay.");
     }
 
     private void printGameplayHelp() {
         System.out.println("""
-        redraw     - Redraw the board
-        leave      - Leave the game
-        resign     - Resign the game
-        move       - Make a move (e.g. move e2 e4)
-        highlight  - Highlight legal moves for a piece
-        help       - Show this help
+        redraw          - Redraw the board
+        leave           - Leave the game
+        resign          - Resign the game
+        move            - Make a move (e.g. move e2 e4)
+        highlight       - Highlight legal moves for a piece
+        help            - Show this help
         """);
     }
 
     private void doMakeMove(String[] parts) {
         if (parts.length < 2) {
             System.out.println("Usage: move <from> <to>   e.g. move e2 e4");
+            return;
+        }
+
+        if (webSocket == null) {
+            System.out.println("webSocket is null");
             return;
         }
 
@@ -448,6 +478,104 @@ public class ChessClient implements WebSocketFacade.ServerMessageHandler{
         }
 
         return new ChessPosition(row, col);
+    }
+
+    private void doHighlight(String[] parts) {
+        if (parts.length < 2) {
+            System.out.println("Usage: highlight <square>   e.g. highlight e2");
+            return;
+        }
+
+        if (currentGame == null) {
+            System.out.println("No game loaded.");
+            return;
+        }
+
+        try {
+            ChessPosition position = parsePosition(parts[1].trim());
+            ChessPiece piece = currentGame.getBoard().getPiece(position);
+
+            if (piece == null) {
+                System.out.println("No piece on that square.");
+                return;
+            }
+
+            Collection<ChessMove> legalMoves = currentGame.validMoves(position);
+            if (legalMoves == null) {
+                legalMoves = java.util.List.of();
+            }
+
+            drawBoardHighlighted(currentGame, whitePerspective, position, legalMoves);
+
+            System.out.println("Socket open after highlight? " +
+                    (webSocket != null));
+
+        } catch (Exception e) {
+            System.out.println("Highlight failed: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void drawBoardHighlighted(ChessGame game, boolean whitePerspective,
+                                      ChessPosition selected, Collection<ChessMove> legalMoves) {
+        ChessBoard board = game.getBoard();
+
+        final String light = "\u001B[48;5;220m";
+        final String dark  = "\u001B[48;5;124m";
+        final String highlight = "\u001B[48;5;34m";
+        final String selectedBg = "\u001B[48;5;27m";
+        final String reset = EscapeSequences.RESET_BG_COLOR + EscapeSequences.RESET_TEXT_COLOR;
+
+        java.util.Set<String> highlightSquares = new java.util.HashSet<>();
+        if (legalMoves != null) {
+            for (ChessMove move : legalMoves) {
+                ChessPosition end = move.getEndPosition();
+                highlightSquares.add(end.getRow() + "," + end.getColumn());
+            }
+        }
+        String selectedKey = selected.getRow() + "," + selected.getColumn();
+
+        System.out.println();
+        String headers = whitePerspective
+                ? "    a  b  c  d  e  f  g  h"
+                : "    h  g  f  e  d  c  b  a";
+        System.out.println(headers);
+
+        for (int row = 0; row < 8; row++) {
+            int displayRow = whitePerspective ? 8 - row : row + 1;
+            System.out.print(" " + displayRow + " ");
+
+            for (int col = 0; col < 8; col++) {
+                int actualRow = whitePerspective ? 8 - row : row + 1;
+                int actualCol = whitePerspective ? col + 1 : 8 - col;
+
+                ChessPosition pos = new ChessPosition(actualRow, actualCol);
+                ChessPiece piece = board.getPiece(pos);
+
+                String key = actualRow + "," + actualCol;
+                boolean isLight = (actualRow + actualCol) % 2 != 0;
+
+                String bg;
+                if (key.equals(selectedKey)) {
+                    bg = selectedBg;
+                } else if (highlightSquares.contains(key)) {
+                    bg = highlight;
+                } else {
+                    bg = isLight ? light : dark;
+                }
+
+                String pieceStr = EscapeSequences.EMPTY;
+                if (piece != null) {
+                    pieceStr = getPieceChar(piece);
+                }
+
+                System.out.print(bg + pieceStr + reset);
+            }
+            System.out.println(" " + displayRow);
+        }
+
+        System.out.println(headers);
+        System.out.println();
     }
 
     private String getPieceChar(ChessPiece piece) {
