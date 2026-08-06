@@ -375,7 +375,7 @@ public class ChessClient implements WebSocketFacade.ServerMessageHandler{
                         inGameplay = false;
                     }
                     case "resign" -> webSocket.resign(authToken, currentGameID);
-                    case "move" -> System.out.println("Move not implemented yet");
+                    case "move" -> doMakeMove(parts);
                     case "highlight" -> System.out.println("Highlight not implemented yet");
                     default -> System.out.println("Unknown command. Type 'help'.");
                 }
@@ -395,6 +395,59 @@ public class ChessClient implements WebSocketFacade.ServerMessageHandler{
         highlight  - Highlight legal moves for a piece
         help       - Show this help
         """);
+    }
+
+    private void doMakeMove(String[] parts) {
+        if (parts.length < 2) {
+            System.out.println("Usage: move <from> <to>   e.g. move e2 e4");
+            return;
+        }
+
+        String[] args = parts[1].split("\\s+");
+        if (args.length < 2) {
+            System.out.println("Usage: move <from> <to>   e.g. move e2 e4");
+            return;
+        }
+
+        try {
+            ChessPosition start = parsePosition(args[0]);
+            ChessPosition end = parsePosition(args[1]);
+
+            ChessPiece.PieceType promotion = null;
+            if (args.length >= 3) {
+                promotion = switch (args[2].toLowerCase()) {
+                    case "q" -> ChessPiece.PieceType.QUEEN;
+                    case "r" -> ChessPiece.PieceType.ROOK;
+                    case "b" -> ChessPiece.PieceType.BISHOP;
+                    case "n" -> ChessPiece.PieceType.KNIGHT;
+                    default -> null;
+                };
+            }
+
+            ChessMove move = new ChessMove(start, end, promotion);
+            webSocket.makeMove(authToken, currentGameID, move);
+
+        } catch (Exception e) {
+            System.out.println("Invalid move: " + e.getMessage());
+        }
+    }
+
+    private ChessPosition parsePosition(String pos) {
+        if (pos == null || pos.length() != 2) {
+            throw new IllegalArgumentException("Position must be like e2");
+        }
+
+        char colChar = pos.toLowerCase().charAt(0);
+        char rowChar = pos.charAt(1);
+
+        int col = colChar - 'a' + 1;
+        int row = rowChar - '0';
+
+        if (col < 1 || col > 8 || row < 1 || row > 8) {
+            throw new IllegalArgumentException("Invalid square: " + pos);
+        }
+
+        return new ChessPosition(row, col);
     }
 
     private String getPieceChar(ChessPiece piece) {
