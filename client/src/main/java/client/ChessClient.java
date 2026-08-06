@@ -4,12 +4,13 @@ import chess.*;
 import ui.EscapeSequences;
 import model.AuthData;
 import model.GameData;
+import websocket.messages.ServerMessage;
 
 import java.util.Scanner;
 
 import static ui.EscapeSequences.*;
 
-public class ChessClient {
+public class ChessClient implements WebSocketFacade.ServerMessageHandler{
 
     private final ServerFacade server;
     private final Scanner scanner = new Scanner(System.in);
@@ -18,8 +19,16 @@ public class ChessClient {
     private String username = null;
     private java.util.List<GameData> games = new java.util.ArrayList<>();
 
+    private final String serverUrl;
+    private WebSocketFacade webSocket;
+    private int currentGameID = -1;
+    private ChessGame currentGame = null;
+    private boolean inGameplay = false;
+    private boolean whitePerspective = true;
+
     public ChessClient(String serverUrl) {
-        server = new ServerFacade(serverUrl);
+        this.serverUrl = serverUrl;
+        this.server = new ServerFacade(serverUrl);
     }
 
     public void run() {
@@ -36,6 +45,24 @@ public class ChessClient {
         }
 
         System.out.println("Thanks for playing!");
+    }
+
+    @Override
+    public void onMessage(ServerMessage message) {
+        switch (message.getServerMessageType()) {
+            case LOAD_GAME -> {
+                currentGame = message.getGame();
+                drawBoard(currentGame, whitePerspective);
+            }
+            case NOTIFICATION -> {
+                System.out.println("\n*** " + message.getMessage() + " ***");
+                System.out.print("[" + username + "] >>> ");
+            }
+            case ERROR -> {
+                System.out.println("\nError: " + message.getErrorMessage());
+                System.out.print("[" + username + "] >>> ");
+            }
+        }
     }
 
     private boolean preLogin() {
@@ -217,6 +244,14 @@ public class ChessClient {
 
             GameData selected = games.get(index);
             server.joinGame(authToken, selected.gameID(), color);
+            this.currentGameID = selected.gameID();
+            this.whitePerspective = color.equals("WHITE");
+            this.inGameplay = true;
+
+            this.webSocket = new WebSocketFacade(serverUrl, this);
+            this.webSocket.connect(authToken, currentGameID);
+
+            doGameplay();
 
             System.out.println("Joined game \"" + selected.gameName() + "\" as " + color);
             ChessGame gameToDraw = selected.game() != null ? selected.game() : new ChessGame();
@@ -247,6 +282,14 @@ public class ChessClient {
             System.out.println("Observing game \"" + selected.gameName() + "\"");
             ChessGame gameToDraw = selected.game() != null ? selected.game() : new ChessGame();
             drawBoard(gameToDraw, true);
+            this.currentGameID = selected.gameID();
+            this.whitePerspective = true;
+            this.inGameplay = true;
+
+            this.webSocket = new WebSocketFacade(serverUrl, this);
+            this.webSocket.connect(authToken, currentGameID);
+
+            doGameplay();
 
         } catch (NumberFormatException e) {
             System.out.println("Game number must be an integer.");
