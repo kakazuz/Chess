@@ -356,6 +356,47 @@ public class ChessClient implements WebSocketFacade.ServerMessageHandler{
         System.out.println();
     }
 
+    private void doGameplay() {
+        System.out.println("Entered gameplay. Type 'help' for commands.");
+        while (inGameplay) {
+            System.out.print("[GAME] >>> ");
+            String input = scanner.nextLine().trim();
+            String[] parts = parse(input);
+            String command = parts[0].toLowerCase();
+
+            try {
+                switch (command) {
+                    case "help" -> printGameplayHelp();
+                    case "redraw" -> {
+                        if (currentGame != null) drawBoard(currentGame, whitePerspective);
+                    }
+                    case "leave" -> {
+                        webSocket.leave(authToken, currentGameID);
+                        inGameplay = false;
+                    }
+                    case "resign" -> webSocket.resign(authToken, currentGameID);
+                    case "move" -> System.out.println("Move not implemented yet");
+                    case "highlight" -> System.out.println("Highlight not implemented yet");
+                    default -> System.out.println("Unknown command. Type 'help'.");
+                }
+            } catch (Exception e) {
+                System.out.println("Error: " + e.getMessage());
+            }
+        }
+        System.out.println("Left gameplay.");
+    }
+
+    private void printGameplayHelp() {
+        System.out.println("""
+        redraw     - Redraw the board
+        leave      - Leave the game
+        resign     - Resign the game
+        move       - Make a move (e.g. move e2 e4)
+        highlight  - Highlight legal moves for a piece
+        help       - Show this help
+        """);
+    }
+
     private String getPieceChar(ChessPiece piece) {
         boolean isWhite = piece.getTeamColor() == ChessGame.TeamColor.WHITE;
 
