@@ -115,7 +115,7 @@ public class WebSocketHandler {
             GameData gameData = gameDAO.getGame(gameID);
             ChessGame game = gameData.game();
 
-            if (game.getTeamTurn() == null) {
+            if (game.isGameOver()) {
                 sendError(ctx, "Error: Game is already over");
                 return;
             }
@@ -137,6 +137,14 @@ public class WebSocketHandler {
 
             game.makeMove(move);
 
+            ChessGame.TeamColor opponent = (playerColor == ChessGame.TeamColor.WHITE)
+                    ? ChessGame.TeamColor.BLACK
+                    : ChessGame.TeamColor.WHITE;
+
+            if (game.isInCheckmate(opponent) || game.isInStalemate(opponent)) {
+                game.setGameOver(true);
+            }
+
             GameData updated = new GameData(
                     gameData.gameID(),
                     gameData.whiteUsername(),
@@ -154,10 +162,6 @@ public class WebSocketHandler {
             ServerMessage moveNotification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION);
             moveNotification.setMessage(moveDescription);
             broadcast(gameID, moveNotification, ctx);
-
-            ChessGame.TeamColor opponent = (playerColor == ChessGame.TeamColor.WHITE)
-                    ? ChessGame.TeamColor.BLACK
-                    : ChessGame.TeamColor.WHITE;
 
             if (game.isInCheckmate(opponent)) {
                 ServerMessage notif = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION);
@@ -228,17 +232,18 @@ public class WebSocketHandler {
             GameData gameData = gameDAO.getGame(gameID);
             ChessGame game = gameData.game();
 
-            if (!username.equals(gameData.whiteUsername()) && !username.equals(gameData.blackUsername())) {
+            if (!username.equals(gameData.whiteUsername()) &&
+                    !username.equals(gameData.blackUsername())) {
                 sendError(ctx, "Error: Only players can resign");
                 return;
             }
 
-            if (game.getTeamTurn() == null) {
+            if (game.isGameOver()) {
                 sendError(ctx, "Error: Game is already over");
                 return;
             }
 
-            game.setTeamTurn(null);
+            game.setGameOver(true);
 
             GameData updated = new GameData(
                     gameData.gameID(),
