@@ -12,6 +12,7 @@ public class ChessGame{
 
     private ChessBoard board;
     private TeamColor currentTeam = TeamColor.WHITE;
+    private boolean gameOver = false;
 
     public ChessGame() {
         board = new ChessBoard();
@@ -230,6 +231,14 @@ public class ChessGame{
             }
         }
         return true;
+    }
+
+    public boolean isGameOver() {
+        return gameOver;
+    }
+
+    public void setGameOver(boolean gameOver) {
+        this.gameOver = gameOver;
     }
 
     @Override
