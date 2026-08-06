@@ -176,7 +176,7 @@ public class WebSocketHandler {
                 broadcast(gameID, notif, null);
             } else if (game.isInCheck(opponent)) {
                 ServerMessage notif = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION);
-                notif.setMessage(username + "is in Check!");
+                notif.setMessage(username + " is in Check!");
                 broadcast(gameID, notif, null);
             } else if (game.isInStalemate(opponent)) {
                 ServerMessage notif = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION);
